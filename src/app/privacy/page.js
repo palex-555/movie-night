@@ -33,7 +33,7 @@ export default function PrivacyPolicy() {
 
       <h2 className="text-2xl font-semibold mt-6 mb-2">Opting Out</h2>
       <p className="mb-4">
-        Users may opt out of personalized advertising by visiting Google’s Ads Settings:
+        Users may opt out of personalized advertising by visiting Google Ads Settings:
         <a
           href="https://www.google.com/settings/ads"
           className="text-blue-400 underline ml-2"
