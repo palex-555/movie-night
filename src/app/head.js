@@ -3,7 +3,7 @@ export default function Head() {
     <>
       <script
         async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2425365894930390"
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2425365894390309"
         crossOrigin="anonymous"
       ></script>
     </>
