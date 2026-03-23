@@ -1,16 +1,17 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "../../../lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import AdBanner from "@/components/AdBanner"; // ⭐ ADDED IMPORT
+import AdBanner from "@/components/AdBanner";
 
-export default function SetupPage() {
+// ⭐ Inner component with hooks
+function SetupPageInner() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [sessionIdInput, setSessionIdInput] = useState("");
+   const [sessionIdInput, setSessionIdInput] = useState("");
 
   const createSession = async () => {
     if (!name.trim()) {
@@ -90,5 +91,14 @@ export default function SetupPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// ⭐ Outer wrapper with Suspense (keeps everything consistent)
+export default function SetupPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-gray-900" />}>
+      <SetupPageInner />
+    </Suspense>
   );
 }

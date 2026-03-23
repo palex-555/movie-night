@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { db } from "../../../lib/firebase";
 import {
@@ -10,9 +10,8 @@ import {
   onSnapshot,
   collection,
   getDocs,
-  deleteDoc
 } from "firebase/firestore";
-import AdBanner from "@/components/AdBanner"; // ⭐ ADDED IMPORT
+import AdBanner from "@/components/AdBanner";
 
 // ⭐ Clean pill-style rating buttons
 function RatingButtons({ value, onChange }) {
@@ -21,7 +20,7 @@ function RatingButtons({ value, onChange }) {
     "⭐ 2 stars",
     "⭐ 3 stars",
     "⭐ 4 stars",
-    "⭐ 5 stars"
+    "⭐ 5 stars",
   ];
 
   return (
@@ -48,14 +47,12 @@ function RatingButtons({ value, onChange }) {
   );
 }
 
-export default function VotePage() {
+// ⭐ Inner component with hooks + search params
+function VotePageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("session");
 
-  // -----------------------------
-  // ⭐ All hooks MUST be at top
-  // -----------------------------
   const [movies, setMovies] = useState([]);
   const [ratings, setRatings] = useState({});
   const [posters, setPosters] = useState({});
@@ -83,8 +80,8 @@ export default function VotePage() {
       collection(db, `sessions/${sessionId}/movies`),
       (snap) => {
         const allMovies = [];
-        snap.forEach((doc) => {
-          const data = doc.data();
+        snap.forEach((docSnap) => {
+          const data = docSnap.data();
           data.movies.forEach((m) => allMovies.push(m));
         });
         setMovies(allMovies);
@@ -100,7 +97,9 @@ export default function VotePage() {
       const map = {};
 
       for (const movie of movies) {
-        const res = await fetch(`/api/poster?title=${encodeURIComponent(movie)}`);
+        const res = await fetch(
+          `/api/poster?title=${encodeURIComponent(movie)}`
+        );
         const data = await res.json();
         map[movie] = data.poster;
       }
@@ -123,11 +122,8 @@ export default function VotePage() {
     });
 
     return () => unsub();
-  }, [sessionId]);
+  }, [sessionId, router]);
 
-  // -----------------------------
-  // ⭐ SAFE conditional return
-  // -----------------------------
   if (!userKey) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
@@ -149,9 +145,6 @@ export default function VotePage() {
     );
   }
 
-  // -----------------------------
-  // ⭐ Submit votes (WITH WEIGHTED LOGIC)
-  // -----------------------------
   const submitVotes = async () => {
     setSubmitting(true);
 
@@ -161,29 +154,35 @@ export default function VotePage() {
 
     setWaiting(true);
 
-    const playersSnap = await getDocs(collection(db, `sessions/${sessionId}/players`));
+    const playersSnap = await getDocs(
+      collection(db, `sessions/${sessionId}/players`)
+    );
     const totalPlayers = playersSnap.size;
 
-    const votesSnap = await getDocs(collection(db, `sessions/${sessionId}/votes`));
+    const votesSnap = await getDocs(
+      collection(db, `sessions/${sessionId}/votes`)
+    );
     const totalVotes = votesSnap.size;
 
     if (totalVotes >= totalPlayers) {
       const allVotes = [];
-      votesSnap.forEach((doc) => allVotes.push(doc.data().ratings));
+      votesSnap.forEach((docSnap) => allVotes.push(docSnap.data().ratings));
 
-      // ⭐ Build movie → owner map
+      // Build movie → owner map
       const movieOwners = {};
-      const movieDocs = await getDocs(collection(db, `sessions/${sessionId}/movies`));
+      const movieDocs = await getDocs(
+        collection(db, `sessions/${sessionId}/movies`)
+      );
 
-      movieDocs.forEach((doc) => {
-        const owner = doc.id;
-        const data = doc.data();
+      movieDocs.forEach((docSnap) => {
+        const owner = docSnap.id;
+        const data = docSnap.data();
         data.movies.forEach((movie) => {
           movieOwners[movie] = owner;
         });
       });
 
-      // ⭐ Weighted scoring
+      // Weighted scoring
       const movieScores = {};
 
       allVotes.forEach((voteSet) => {
@@ -192,14 +191,13 @@ export default function VotePage() {
 
           const owner = movieOwners[movie];
           const isSelfVote = owner === userKey;
-
           const weight = isSelfVote ? 0.5 : 1.0;
 
           movieScores[movie] += score * weight;
         });
       });
 
-      // ⭐ Determine winner
+      // Determine winner
       let winner = null;
       let bestScore = -1;
 
@@ -210,7 +208,6 @@ export default function VotePage() {
         }
       });
 
-      // ⭐ Update session with winner
       await updateDoc(doc(db, "sessions", sessionId), {
         state: "finished",
         winner,
@@ -222,15 +219,13 @@ export default function VotePage() {
     setRatings((prev) => ({ ...prev, [movie]: value }));
   };
 
-  // -----------------------------
-  // ⭐ Main UI
-  // -----------------------------
   return (
     <>
       <main className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
         <div className="bg-gray-800 p-10 rounded-xl w-full max-w-3xl shadow-xl">
-
-          <h1 className="text-4xl font-bold mb-10 text-center">⭐ Rate the Movies</h1>
+          <h1 className="text-4xl font-bold mb-10 text-center">
+            ⭐ Rate the Movies
+          </h1>
 
           <div className="grid grid-cols-1 gap-10">
             {movies.map((movie, i) => (
@@ -266,7 +261,16 @@ export default function VotePage() {
         </div>
       </main>
 
-      <AdBanner slot="1000000004" /> {/* ⭐ Correct placement */}
+      <AdBanner slot="1000000004" />
     </>
+  );
+}
+
+// ⭐ Outer component with Suspense for Next.js 16
+export default function VotePage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-gray-900" />}>
+      <VotePageInner />
+    </Suspense>
   );
 }

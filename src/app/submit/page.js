@@ -1,20 +1,20 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { db } from "../../../lib/firebase";
 import {
   doc,
   setDoc,
   updateDoc,
-  getDoc,
   onSnapshot,
   collection,
   getDocs
 } from "firebase/firestore";
-import AdBanner from "@/components/AdBanner"; // ⭐ ADDED IMPORT
+import AdBanner from "@/components/AdBanner";
 
-export default function SubmitPage() {
+// ⭐ Inner component with hooks + search params
+function SubmitPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("session");
@@ -37,7 +37,7 @@ export default function SubmitPage() {
     });
 
     return () => unsub();
-  }, [sessionId]);
+  }, [sessionId, router]);
 
   const submitMovies = async () => {
     if (!movie1) return alert("Enter at least one movie");
@@ -51,12 +51,16 @@ export default function SubmitPage() {
       movies: [movie1, movie2].filter(Boolean),
     });
 
-    // Count how many players exist
-    const playersSnap = await getDocs(collection(db, `sessions/${sessionId}/players`));
+    // Count players
+    const playersSnap = await getDocs(
+      collection(db, `sessions/${sessionId}/players`)
+    );
     const totalPlayers = playersSnap.size;
 
-    // Count how many have submitted
-    const moviesSnap = await getDocs(collection(db, `sessions/${sessionId}/movies`));
+    // Count submissions
+    const moviesSnap = await getDocs(
+      collection(db, `sessions/${sessionId}/movies`)
+    );
     const submittedPlayers = moviesSnap.size;
 
     // If all players submitted → move to voting
@@ -100,5 +104,14 @@ export default function SubmitPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// ⭐ Outer wrapper with Suspense (required for Next.js 16)
+export default function SubmitPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-gray-900" />}>
+      <SubmitPageInner />
+    </Suspense>
   );
 }

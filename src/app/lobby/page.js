@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { db } from "../../../lib/firebase";
 import {
   doc,
@@ -11,9 +11,10 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import AdBanner from "@/components/AdBanner"; // ⭐ ADDED IMPORT
+import AdBanner from "@/components/AdBanner";
 
-export default function LobbyPage() {
+// ⭐ Inner component with hooks + search params
+function LobbyPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -49,7 +50,7 @@ export default function LobbyPage() {
     };
 
     join();
-  }, [sessionId, nameFromURL]);
+  }, [sessionId, nameFromURL, userKey]);
 
   // Listen for players + countdown
   useEffect(() => {
@@ -84,7 +85,9 @@ export default function LobbyPage() {
       collection(db, `sessions/${sessionId}/players`),
       (snap) => {
         const list = [];
-        snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+        snap.forEach((docSnap) =>
+          list.push({ id: docSnap.id, ...docSnap.data() })
+        );
         setPlayers(list);
       }
     );
@@ -93,7 +96,7 @@ export default function LobbyPage() {
       unsubSession();
       unsubPlayers();
     };
-  }, [sessionId]);
+  }, [sessionId, router]);
 
   // Player clicks "I'm Ready"
   const toggleReady = async () => {
@@ -175,5 +178,14 @@ export default function LobbyPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// ⭐ Outer wrapper with Suspense (required for Next.js 16)
+export default function LobbyPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-gray-900" />}>
+      <LobbyPageInner />
+    </Suspense>
   );
 }

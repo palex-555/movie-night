@@ -1,10 +1,11 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import AdBanner from "@/components/AdBanner"; // ⭐ ADDED IMPORT
+import AdBanner from "@/components/AdBanner";
 
-export default function JoinPage() {
+// ⭐ Inner component with hooks
+function JoinPageInner() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [sessionId, setSessionId] = useState("");
@@ -50,5 +51,14 @@ export default function JoinPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// ⭐ Outer wrapper with Suspense (keeps everything consistent)
+export default function JoinPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-gray-900" />}>
+      <JoinPageInner />
+    </Suspense>
   );
 }

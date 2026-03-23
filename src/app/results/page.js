@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase";
 import {
@@ -11,16 +11,17 @@ import {
   deleteDoc
 } from "firebase/firestore";
 import confetti from "canvas-confetti";
-import AdBanner from "@/components/AdBanner"; // ⭐ ADDED IMPORT
+import AdBanner from "@/components/AdBanner";
 
-export default function ResultsPage() {
+// ⭐ Inner component with hooks + search params
+function ResultsPageInner() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session");
 
   const [winner, setWinner] = useState(null);
   const [poster, setPoster] = useState(null);
 
-  // ⭐ Load winner + poster + confetti
+  // Load winner + poster + confetti
   useEffect(() => {
     if (!sessionId) return;
 
@@ -48,12 +49,11 @@ export default function ResultsPage() {
     return () => unsub();
   }, [sessionId]);
 
-  // ⭐ Auto-cleanup after 2 minutes + return home
+  // Auto-cleanup after 2 minutes + return home
   useEffect(() => {
     if (!sessionId || !winner) return;
 
     const cleanup = async () => {
-      // Wait 2 minutes
       await new Promise((res) => setTimeout(res, 120000));
 
       const deleteCollection = async (ref) => {
@@ -68,7 +68,6 @@ export default function ResultsPage() {
 
       await deleteDoc(doc(db, "sessions", sessionId));
 
-      // Return to home screen
       window.location.href = "/";
     };
 
@@ -104,7 +103,16 @@ export default function ResultsPage() {
         </div>
       </main>
 
-      <AdBanner slot="1000000005" /> {/* ⭐ Correct placement */}
+      <AdBanner slot="1000000005" />
     </>
+  );
+}
+
+// ⭐ Outer wrapper with Suspense (required for Next.js 16)
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-gray-900" />}>
+      <ResultsPageInner />
+    </Suspense>
   );
 }
