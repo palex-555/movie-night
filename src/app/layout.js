@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Movie Night",
   description: "Group movie voting app",
+  other: {
+    "google-adsense-account": "ca-pub-2425365894930390",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -23,14 +26,16 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-gray-900 text-white">
+      <head>
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2425365894930390"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
         />
+      </head>
 
+      <body className="min-h-screen flex flex-col bg-gray-900 text-white">
         {children}
 
         <footer className="mt-auto p-4 text-center text-gray-400 text-sm">
