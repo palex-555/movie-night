@@ -1,5 +1,6 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 
 // Load fonts
 const geistSans = Geist({
@@ -12,13 +13,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// App metadata
+// Metadata for SEO + AdSense
 export const metadata = {
   title: "Movie Night",
   description: "Group movie voting app",
-  other: {
-    "google-adsense-account": "YOUR_ADSENSE_CLIENT_ID",
-  },
 };
 
 export default function RootLayout({ children }) {
@@ -27,8 +25,24 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-gray-900 text-white">
+      <body className="min-h-screen flex flex-col bg-gray-900 text-white">
+
+        {/* Google AdSense (safe + correct way) */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=YOUR_ADSENSE_CLIENT_ID"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
+        {/* Page content */}
         {children}
+
+        {/* Footer (required for AdSense approval) */}
+        <footer className="mt-auto p-4 text-center text-gray-400 text-sm">
+          <a href="/privacy" className="underline mr-4">Privacy Policy</a>
+          <a href="/terms" className="underline">Terms of Service</a>
+        </footer>
       </body>
     </html>
   );
